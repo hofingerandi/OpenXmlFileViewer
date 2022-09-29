@@ -337,41 +337,6 @@ namespace OpenXmlFileViewer
             catch { }
         }
 
-        /// <summary>
-        /// Highlight all the text
-        /// </summary>
-        private void Highlight()
-        {
-            //reset any exisiting formatting
-            lineNumberTextBox1.DisableUpdates = true;
-            lineNumberTextBox1.RTB.SelectAll();
-            lineNumberTextBox1.RTB.SelectionBackColor = Color.White;
-            lineNumberTextBox1.RTB.SelectionColor = Color.Black;
-            lineNumberTextBox1.RTB.DeselectAll();
-            setFormatting("<", Color.Blue);
-            setFormatting(">", Color.Blue);
-            setFormatting("\"", Color.Red);
-
-            lineNumberTextBox1.DisableUpdates = false;
-        }
-
-        /// <summary>
-        /// Formats the text RTF
-        /// </summary>
-        /// <param name="PstrTag"></param>
-        /// <param name="LobjColor"></param>
-        private void setFormatting(string PstrTag, Color LobjColor)
-        {
-            MatchCollection LobjMatch;
-            Regex LobjReg = new Regex(PstrTag, RegexOptions.Compiled);
-            LobjMatch = LobjReg.Matches(lineNumberTextBox1.RTB.Text);
-            for (int LintIdx = 0; LintIdx < LobjMatch.Count - 1; LintIdx += 1)
-            {
-                lineNumberTextBox1.RTB.Select(LobjMatch[LintIdx].Index, LobjMatch[LintIdx].Length);
-                lineNumberTextBox1.RTB.SelectionColor = LobjColor;
-            }
-        }
-
         private void DeleteSelectedNode()
         {
             var node = treeView1.SelectedNode;

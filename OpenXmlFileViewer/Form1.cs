@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.IO.Packaging;
 using System.IO;
-using System.Xml;
+using System.IO.Packaging;
+using System.Text;
 using System.Text.RegularExpressions;
-using System.Diagnostics;
-using System.Threading;
+using System.Windows.Forms;
+using System.Xml;
+using OpenXmlFileViewer.Extensions;
 
 namespace OpenXmlFileViewer
 {
@@ -33,7 +28,7 @@ namespace OpenXmlFileViewer
         public Form1(string[] PstrArgs)
         {
             InitializeComponent();
-            lineNumberTextBox1.XmlTextChanged += (o,e) =>
+            lineNumberTextBox1.XmlTextChanged += (o, e) =>
             {
                 toolStripButton3.Enabled = true;
             };
@@ -43,8 +38,18 @@ namespace OpenXmlFileViewer
                 MstrPath = PstrArgs[0];
                 openFile();
             }
+            treeView1.KeyDown += TreeView1_KeyDown;
+
             removeTabPages();
             webBrowser1.Navigate("about:blank");
+        }
+
+        private void TreeView1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                DeleteSelectedNode();
+            }
         }
 
         /// <summary>
@@ -65,7 +70,7 @@ namespace OpenXmlFileViewer
         private void toolStripButton1_Click(object PobjSender, EventArgs PobjEventArgs)
         {
             OpenFileDialog LobjOfd = new OpenFileDialog();
-            LobjOfd.Filter = "All|*.doc*;*.xls*;*.ppt*|Word Documents|*.doc*|Excel Workbooks|*.xls*|PowerPoint Presentations|*.ppt*";
+            LobjOfd.Filter = "All|*.doc*;*.xls*;*.ppt*;*.mip;*.simp|Word Documents|*.doc*|Excel Workbooks|*.xls*|PowerPoint Presentations|*.ppt*";
             if (LobjOfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 MstrPath = LobjOfd.FileName;
@@ -146,10 +151,10 @@ namespace OpenXmlFileViewer
             foreach (TreeNode LobjNode in PobjNode.Nodes)
             {
                 LobjRetVal = NodeWithPath(LobjNode, PstrPath);
-                if(LobjRetVal != null)
+                if (LobjRetVal != null)
                     return LobjRetVal;
             }
-            string LstrNodePath = PobjNode.FullPath.Substring(1).Replace("\\","/");
+            string LstrNodePath = PobjNode.FullPath.Substring(1).Replace("\\", "/");
             if (LstrNodePath == PstrPath)
                 return PobjNode;
             else
@@ -367,6 +372,23 @@ namespace OpenXmlFileViewer
             }
         }
 
+        private void DeleteSelectedNode()
+        {
+            var node = treeView1.SelectedNode;
+            if (node == null)
+                return;
+
+            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.ReadWrite))
+            {
+                // get the URI for the part
+                string LstrUri = node.FullPath.Substring(1).Replace("\\", "/");
+                // grab the part
+                var nodeToDelete = new Uri(LstrUri, UriKind.Relative);
+                LobjZip.DeletePartAndRelationships(nodeToDelete);
+            }
+            treeView1.Nodes.Remove(node);
+        }
+
         /// <summary>
         /// User selected to SAVE the selected open part
         /// </summary>
@@ -447,13 +469,13 @@ namespace OpenXmlFileViewer
         private void toolStripButton5_Click(object sender, EventArgs e)
         {
             // get the filename for the part
-            string LstrFn = label1.Text.Substring(label1.Text.LastIndexOf('/')).Replace("/","");
+            string LstrFn = label1.Text.Substring(label1.Text.LastIndexOf('/')).Replace("/", "");
             // ask the user
             SaveFileDialog LobjSfd = new SaveFileDialog();
             LobjSfd.Filter = "All Files (*.*)|*.*";
             LobjSfd.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             LobjSfd.FileName = LobjSfd.InitialDirectory + "\\" + LstrFn;
-            if(LobjSfd.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
+            if (LobjSfd.ShowDialog() == System.Windows.Forms.DialogResult.Cancel)
                 return;
 
             // open the package
@@ -469,7 +491,7 @@ namespace OpenXmlFileViewer
                 // write the part to disk
                 StreamReader LobjSr = new StreamReader(LobjPart.GetStream(FileMode.Open, FileAccess.Read));
                 BinaryWriter LobjSw = new BinaryWriter(new FileInfo(LobjSfd.FileName).Create());
-                while(!LobjSr.EndOfStream)
+                while (!LobjSr.EndOfStream)
                     LobjSw.Write(LobjSr.Read());
                 LobjSw.Close();
                 LobjSr.Close();

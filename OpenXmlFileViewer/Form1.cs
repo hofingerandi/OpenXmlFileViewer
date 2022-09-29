@@ -28,9 +28,9 @@ namespace OpenXmlFileViewer
         public Form1(string[] PstrArgs)
         {
             InitializeComponent();
-            lineNumberTextBox1.XmlTextChanged += (o, e) =>
+            lineNumberTextBox.XmlTextChanged += (o, e) =>
             {
-                toolStripButton3.Enabled = true;
+                toolStripBtnSave.Enabled = true;
             };
             this.Text = "OpenXml File Viewer";
             if (PstrArgs.Length > 0)
@@ -38,13 +38,13 @@ namespace OpenXmlFileViewer
                 MstrPath = PstrArgs[0];
                 openFile();
             }
-            treeView1.KeyDown += TreeView1_KeyDown;
+            treeView.KeyDown += TreeView_KeyDown;
 
             removeTabPages();
             webBrowser1.Navigate("about:blank");
         }
 
-        private void TreeView1_KeyDown(object sender, KeyEventArgs e)
+        private void TreeView_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Delete)
             {
@@ -58,8 +58,8 @@ namespace OpenXmlFileViewer
         private void removeTabPages()
         {
             // hide all the tags
-            foreach (TabPage LobjPage in tabControl1.TabPages)
-                tabControl1.TabPages.Remove(LobjPage);
+            foreach (TabPage LobjPage in tabControl.TabPages)
+                tabControl.TabPages.Remove(LobjPage);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace OpenXmlFileViewer
         /// </summary>
         /// <param name="PobjSender"></param>
         /// <param name="PobjEventArgs"></param>
-        private void toolStripButton1_Click(object PobjSender, EventArgs PobjEventArgs)
+        private void toolStripBtnOpen_Click(object PobjSender, EventArgs PobjEventArgs)
         {
             OpenFileDialog LobjOfd = new OpenFileDialog();
             LobjOfd.Filter = "All|*.doc*;*.xls*;*.ppt*;*.mip;*.simp|Word Documents|*.doc*|Excel Workbooks|*.xls*|PowerPoint Presentations|*.ppt*";
@@ -83,14 +83,14 @@ namespace OpenXmlFileViewer
         /// </summary>
         private void openFile()
         {
-            toolStripButton1.Enabled = false;
-            toolStripButton2.Enabled = true;
+            toolStripBtnOpen.Enabled = false;
+            toolStripBtnClose.Enabled = true;
             this.Text = "[" + new FileInfo(MstrPath).Name + "]";
             // open the package
             using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.Read))
             {
                 // setup the root node
-                TreeNode LobjRoot = treeView1.Nodes.Add("/", "/");
+                TreeNode LobjRoot = treeView.Nodes.Add("/", "/");
                 // read all the parts
                 foreach (ZipPackagePart LobjPart in LobjZip.GetParts())
                 {
@@ -107,8 +107,8 @@ namespace OpenXmlFileViewer
                     LobjParent.Nodes.Add(LstrKey, LstrName);
                 }
             }
-            MobjPreviousNode = treeView1.Nodes[0];
-            treeView1.Nodes[0].Expand();
+            MobjPreviousNode = treeView.Nodes[0];
+            treeView.Nodes[0].Expand();
         }
 
         /// <summary>
@@ -122,14 +122,14 @@ namespace OpenXmlFileViewer
             string[] LstrParts = PstrKey.Split(new string[1] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             string LstrPath = "";
             // grab the root node
-            TreeNode LobjLastNode = treeView1.Nodes[0];
+            TreeNode LobjLastNode = treeView.Nodes[0];
             // search through all the parts
             foreach (string LstrPart in LstrParts)
             {
                 // build th path
                 LstrPath += "/" + LstrPart;
                 // get the node with that path
-                TreeNode LobjNode = NodeWithPath(treeView1.Nodes[0], LstrPath);
+                TreeNode LobjNode = NodeWithPath(treeView.Nodes[0], LstrPath);
                 if (LobjNode != null)
                     LobjLastNode = LobjNode;
                 else
@@ -214,18 +214,18 @@ namespace OpenXmlFileViewer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        private void toolStripBtnClose_Click(object sender, EventArgs e)
         {
             // clean up everything
-            treeView1.Nodes.Clear();
+            treeView.Nodes.Clear();
             webBrowser1.DocumentText = "";
-            lineNumberTextBox1.Text = "";
+            lineNumberTextBox.Text = "";
             this.Text = "OpenXml File Viewer";
             label1.Text = "[path]";
-            toolStripButton1.Enabled = true;
-            toolStripButton2.Enabled = false;
-            toolStripButton3.Enabled = false;
-            toolStripButton4.Enabled = false;
+            toolStripBtnOpen.Enabled = true;
+            toolStripBtnClose.Enabled = false;
+            toolStripBtnSave.Enabled = false;
+            toolStripBtnFind.Enabled = false;
         }
 
         /// <summary>
@@ -239,7 +239,7 @@ namespace OpenXmlFileViewer
                 return;
 
             // is the document dirty? And are we on the Edit tab
-            if (toolStripButton3.Enabled && tabControl1.SelectedTab == tabPage2)
+            if (toolStripBtnSave.Enabled && tabControl.SelectedTab == tabPage2)
             {
                 DialogResult LobjDr = MessageBox.Show("Are you sure you want to switch? \n\n" +
                                                       "The currently loaded part [" + label1.Text + "] has not been saved.",
@@ -247,12 +247,12 @@ namespace OpenXmlFileViewer
                                                       MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
                 if (LobjDr == DialogResult.Yes)
                 {
-                    toolStripButton3_Click(null, null);
+                    toolStripBtnSave_Click(null, null);
                 }
                 else if (LobjDr == System.Windows.Forms.DialogResult.Cancel)
                 {
                     MbolInSelect = true;
-                    treeView1.SelectedNode = MobjPreviousNode;
+                    treeView.SelectedNode = MobjPreviousNode;
                     MbolInSelect = false;
                     return;
                 }
@@ -262,12 +262,12 @@ namespace OpenXmlFileViewer
             MobjPreviousNode.BackColor = SystemColors.Window;
             MobjPreviousNode = PobjEventArgs.Node;
             MobjPreviousNode.BackColor = SystemColors.MenuHighlight;
-            lineNumberTextBox1.Text = "";
+            lineNumberTextBox.Text = "";
             webBrowser1.DocumentText = "";
-            toolStripButton3.Enabled = false;
-            toolStripButton4.Enabled = false;
+            toolStripBtnSave.Enabled = false;
+            toolStripBtnFind.Enabled = false;
             label1.Text = PobjEventArgs.Node.FullPath.Substring(1).Replace("\\", "/");
-            toolStripButton5.Enabled = true; // always allow export
+            toolStripBtnExtract.Enabled = true; // always allow export
 
             // determine the PART type - if it is not VML or XML, then do not try to
             // read it.
@@ -285,7 +285,7 @@ namespace OpenXmlFileViewer
                    PobjEventArgs.Node.FullPath.ToLower().EndsWith("wmf") ||
                    PobjEventArgs.Node.FullPath.ToLower().EndsWith("emf"))
                 {
-                    tabControl1.TabPages.Add(tabPage3);
+                    tabControl.TabPages.Add(tabPage3);
                     tabPage3.Select();
                     using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.Read))
                     {
@@ -304,8 +304,8 @@ namespace OpenXmlFileViewer
             {
                 // show the text panes
                 removeTabPages();
-                tabControl1.TabPages.Add(tabPage1);
-                tabControl1.TabPages.Add(tabPage2);
+                tabControl.TabPages.Add(tabPage1);
+                tabControl.TabPages.Add(tabPage2);
             }
 
             try
@@ -327,11 +327,11 @@ namespace OpenXmlFileViewer
                     webBrowser1.DocumentText = LstrXml;
                     LobjMemoryStream.Position = 0;
                     // format the string
-                    lineNumberTextBox1.Text = FormatXml(LstrXml);
+                    lineNumberTextBox.Text = FormatXml(LstrXml);
                     //Highlight();
                 }
-                toolStripButton3.Enabled = false;
-                toolStripButton4.Enabled = true;
+                toolStripBtnSave.Enabled = false;
+                toolStripBtnFind.Enabled = true;
                 this.Refresh();
             }
             catch { }
@@ -339,7 +339,7 @@ namespace OpenXmlFileViewer
 
         private void DeleteSelectedNode()
         {
-            var node = treeView1.SelectedNode;
+            var node = treeView.SelectedNode;
             if (node == null)
                 return;
 
@@ -351,7 +351,7 @@ namespace OpenXmlFileViewer
                 var nodeToDelete = new Uri(LstrUri, UriKind.Relative);
                 LobjZip.DeletePartAndRelationships(nodeToDelete);
             }
-            treeView1.Nodes.Remove(node);
+            treeView.Nodes.Remove(node);
         }
 
         /// <summary>
@@ -359,7 +359,7 @@ namespace OpenXmlFileViewer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void toolStripButton3_Click(object sender, EventArgs e)
+        private void toolStripBtnSave_Click(object sender, EventArgs e)
         {
             // open the package
             using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.ReadWrite))
@@ -370,10 +370,10 @@ namespace OpenXmlFileViewer
                 LobjStream.SetLength(0);
                 LobjStream.Flush();
                 StreamWriter LobjSw = new StreamWriter(LobjStream);
-                LobjSw.Write(lineNumberTextBox1.Text);
+                LobjSw.Write(lineNumberTextBox.Text);
                 LobjSw.Close();
             }
-            toolStripButton3.Enabled = false;
+            toolStripBtnSave.Enabled = false;
         }
 
         /// <summary>
@@ -381,26 +381,26 @@ namespace OpenXmlFileViewer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void toolStripButton4_Click(object sender, EventArgs e)
+        private void toolStripBtnFind_Click(object sender, EventArgs e)
         {
             // find dialog
             MobjFd = new FindDialog();
             MobjFd.TopMost = true;
             MobjFd.FindNext += (string PstrItem) =>
             {
-                int LintIdx = lineNumberTextBox1.Text.IndexOf(PstrItem, MintLastFindPos);
+                int LintIdx = lineNumberTextBox.Text.IndexOf(PstrItem, MintLastFindPos);
                 int LintLen = PstrItem.Length;
                 if (LintIdx >= 0)
                 {
-                    lineNumberTextBox1.Select(LintIdx, LintLen);
+                    lineNumberTextBox.Select(LintIdx, LintLen);
                     MintLastFindPos = LintIdx + LintLen;
                 }
                 else
                 {
                     MintLastFindPos = 0;
                 }
-                lineNumberTextBox1.Select();
-                lineNumberTextBox1.Focus();
+                lineNumberTextBox.Select();
+                lineNumberTextBox.Focus();
                 this.Focus();
             };
             MobjFd.Reset += () =>
@@ -417,12 +417,12 @@ namespace OpenXmlFileViewer
         /// <param name="PobjKeyArgs"></param>
         private void Form1_KeyUp(object PobjSender, KeyEventArgs PobjKeyArgs)
         {
-            if (PobjKeyArgs.KeyCode == Keys.F3 && toolStripButton4.Enabled)
+            if (PobjKeyArgs.KeyCode == Keys.F3 && toolStripBtnFind.Enabled)
             {
                 if (MobjFd != null && MobjFd.Visible)
                     MobjFd.FindNextPoke();
                 else
-                    toolStripButton4_Click(null, null);
+                    toolStripBtnFind_Click(null, null);
             }
         }
 
@@ -431,7 +431,7 @@ namespace OpenXmlFileViewer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void toolStripButton5_Click(object sender, EventArgs e)
+        private void toolStripBtnExtract_Click(object sender, EventArgs e)
         {
             // get the filename for the part
             string LstrFn = label1.Text.Substring(label1.Text.LastIndexOf('/')).Replace("/", "");
@@ -461,11 +461,6 @@ namespace OpenXmlFileViewer
                 LobjSw.Close();
                 LobjSr.Close();
             }
-        }
-
-        private void toolStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
         }
     }
 }

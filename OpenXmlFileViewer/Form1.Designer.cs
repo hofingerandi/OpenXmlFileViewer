@@ -37,7 +37,7 @@
             this.treeView = new System.Windows.Forms.TreeView();
             this.tabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.webBrowser1 = new System.Windows.Forms.WebBrowser();
+            this.webBrowserCtrl = new System.Windows.Forms.WebBrowser();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
@@ -180,7 +180,7 @@
             // 
             // tabPage1
             // 
-            this.tabPage1.Controls.Add(this.webBrowser1);
+            this.tabPage1.Controls.Add(this.webBrowserCtrl);
             this.tabPage1.Location = new System.Drawing.Point(8, 39);
             this.tabPage1.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.tabPage1.Name = "tabPage1";
@@ -192,13 +192,13 @@
             // 
             // webBrowser1
             // 
-            this.webBrowser1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.webBrowser1.Location = new System.Drawing.Point(4, 6);
-            this.webBrowser1.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
-            this.webBrowser1.MinimumSize = new System.Drawing.Size(30, 31);
-            this.webBrowser1.Name = "webBrowser1";
-            this.webBrowser1.Size = new System.Drawing.Size(1432, 925);
-            this.webBrowser1.TabIndex = 1;
+            this.webBrowserCtrl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.webBrowserCtrl.Location = new System.Drawing.Point(4, 6);
+            this.webBrowserCtrl.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+            this.webBrowserCtrl.MinimumSize = new System.Drawing.Size(30, 31);
+            this.webBrowserCtrl.Name = "webBrowser1";
+            this.webBrowserCtrl.Size = new System.Drawing.Size(1432, 925);
+            this.webBrowserCtrl.TabIndex = 1;
             // 
             // tabPage2
             // 
@@ -408,7 +408,7 @@
         private System.Windows.Forms.ToolStripButton toolStripBtnOpen;
         private System.Windows.Forms.TabControl tabControl;
         private System.Windows.Forms.TabPage tabPage1;
-        private System.Windows.Forms.WebBrowser webBrowser1;
+        private System.Windows.Forms.WebBrowser webBrowserCtrl;
         private System.Windows.Forms.TabPage tabPage2;
         private OpenXmlFileViewer.LineNumberTextBox lineNumberTextBox;
         private System.Windows.Forms.ToolStripButton toolStripBtnClose;

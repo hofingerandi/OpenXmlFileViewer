@@ -3,7 +3,6 @@ using System.Drawing;
 using System.IO;
 using System.IO.Packaging;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
 using OpenXmlFileViewer.Extensions;
@@ -17,15 +16,15 @@ namespace OpenXmlFileViewer
         /// </summary>
         private TreeNode MobjPreviousNode = null;
         private bool MbolInSelect = false;
-        private string MstrPath = "";
+        private string PackagePath = "";
         private int MintLastFindPos = 0;
         private FindDialog MobjFd = null;
 
         /// <summary>
         /// CTOR
         /// </summary>
-        /// <param name="PstrArgs"></param>
-        public Form1(string[] PstrArgs)
+        /// <param name="args"></param>
+        public Form1(string[] args)
         {
             InitializeComponent();
             lineNumberTextBox.XmlTextChanged += (o, e) =>
@@ -33,15 +32,15 @@ namespace OpenXmlFileViewer
                 toolStripBtnSave.Enabled = true;
             };
             this.Text = "OpenXml File Viewer";
-            if (PstrArgs.Length > 0)
+            if (args.Length > 0)
             {
-                MstrPath = PstrArgs[0];
+                PackagePath = args[0];
                 openFile();
             }
             treeView.KeyDown += TreeView_KeyDown;
 
             removeTabPages();
-            webBrowser1.Navigate("about:blank");
+            webBrowserCtrl.Navigate("about:blank");
         }
 
         private void TreeView_KeyDown(object sender, KeyEventArgs e)
@@ -57,9 +56,9 @@ namespace OpenXmlFileViewer
         /// </summary>
         private void removeTabPages()
         {
-            // hide all the tags
-            foreach (TabPage LobjPage in tabControl.TabPages)
-                tabControl.TabPages.Remove(LobjPage);
+            // hide all the tabs
+            foreach (TabPage page in tabControl.TabPages)
+                tabControl.TabPages.Remove(page);
         }
 
         /// <summary>
@@ -69,12 +68,14 @@ namespace OpenXmlFileViewer
         /// <param name="PobjEventArgs"></param>
         private void toolStripBtnOpen_Click(object PobjSender, EventArgs PobjEventArgs)
         {
-            OpenFileDialog LobjOfd = new OpenFileDialog();
-            LobjOfd.Filter = "All|*.doc*;*.xls*;*.ppt*;*.mip;*.simp|Word Documents|*.doc*|Excel Workbooks|*.xls*|PowerPoint Presentations|*.ppt*";
-            if (LobjOfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            using (var dialog = new OpenFileDialog())
             {
-                MstrPath = LobjOfd.FileName;
-                openFile();
+                dialog.Filter = "All|*.doc*;*.xls*;*.ppt*;*.mip;*.simp|Word Documents|*.doc*|Excel Workbooks|*.xls*|PowerPoint Presentations|*.ppt*";
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    PackagePath = dialog.FileName;
+                    openFile();
+                }
             }
         }
 
@@ -85,14 +86,14 @@ namespace OpenXmlFileViewer
         {
             toolStripBtnOpen.Enabled = false;
             toolStripBtnClose.Enabled = true;
-            this.Text = "[" + new FileInfo(MstrPath).Name + "]";
+            this.Text = "[" + new FileInfo(PackagePath).Name + "]";
             // open the package
-            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.Read))
+            using (var package = Package.Open(PackagePath, FileMode.Open, FileAccess.Read))
             {
                 // setup the root node
-                TreeNode LobjRoot = treeView.Nodes.Add("/", "/");
+                var rootNode = treeView.Nodes.Add("/", "/");
                 // read all the parts
-                foreach (ZipPackagePart LobjPart in LobjZip.GetParts())
+                foreach (ZipPackagePart LobjPart in package.GetParts())
                 {
                     // build a path string and...
                     int LintLen = LobjPart.Uri.OriginalString.LastIndexOf("/");
@@ -100,11 +101,11 @@ namespace OpenXmlFileViewer
                     string LstrPath = LstrKey.Substring(0, LintLen);
                     string LstrName = LstrKey.Substring(LintLen + 1);
                     // set the parent, then
-                    TreeNode LobjParent = LobjRoot;
+                    TreeNode parentNode = rootNode;
                     if (LstrPath.Length != 0)
-                        LobjParent = FindClosestNode(LstrPath);
+                        parentNode = FindClosestNode(LstrPath);
                     // add the node to the tree control
-                    LobjParent.Nodes.Add(LstrKey, LstrName);
+                    parentNode.Nodes.Add(LstrKey, LstrName);
                 }
             }
             MobjPreviousNode = treeView.Nodes[0];
@@ -114,49 +115,48 @@ namespace OpenXmlFileViewer
         /// <summary>
         /// Locates the closest node to the given key
         /// </summary>
-        /// <param name="PstrKey"></param>
+        /// <param name="key"></param>
         /// <returns></returns>
-        private TreeNode FindClosestNode(string PstrKey)
+        private TreeNode FindClosestNode(string key)
         {
             // get the parts of the path
-            string[] LstrParts = PstrKey.Split(new string[1] { "/" }, StringSplitOptions.RemoveEmptyEntries);
+            string[] parts = key.Split(new string[1] { "/" }, StringSplitOptions.RemoveEmptyEntries);
             string LstrPath = "";
             // grab the root node
-            TreeNode LobjLastNode = treeView.Nodes[0];
+            TreeNode lastNode = treeView.Nodes[0];
             // search through all the parts
-            foreach (string LstrPart in LstrParts)
+            foreach (var part in parts)
             {
-                // build th path
-                LstrPath += "/" + LstrPart;
+                // build the path
+                LstrPath += "/" + part;
                 // get the node with that path
-                TreeNode LobjNode = NodeWithPath(treeView.Nodes[0], LstrPath);
+                TreeNode LobjNode = FindNodeFromPathRecursively(treeView.Nodes[0], LstrPath);
                 if (LobjNode != null)
-                    LobjLastNode = LobjNode;
+                    lastNode = LobjNode;
                 else
-                    LobjLastNode = LobjLastNode.Nodes.Add(LstrPath, LstrPart);
+                    lastNode = lastNode.Nodes.Add(LstrPath, part);
             }
             // return the found node
-            return LobjLastNode;
+            return lastNode;
         }
 
         /// <summary>
         /// Get the node with the given path
         /// </summary>
-        /// <param name="PobjNode"></param>
-        /// <param name="PstrPath"></param>
+        /// <param name="parent"></param>
+        /// <param name="path"></param>
         /// <returns></returns>
-        private TreeNode NodeWithPath(TreeNode PobjNode, string PstrPath)
+        private TreeNode FindNodeFromPathRecursively(TreeNode parent, string path)
         {
-            TreeNode LobjRetVal = null;
-            foreach (TreeNode LobjNode in PobjNode.Nodes)
+            foreach (TreeNode childNode in parent.Nodes)
             {
-                LobjRetVal = NodeWithPath(LobjNode, PstrPath);
-                if (LobjRetVal != null)
-                    return LobjRetVal;
+                var node = FindNodeFromPathRecursively(childNode, path);
+                if (node != null)
+                    return node;
             }
-            string LstrNodePath = PobjNode.FullPath.Substring(1).Replace("\\", "/");
-            if (LstrNodePath == PstrPath)
-                return PobjNode;
+            var parentPath = parent.FullPath.Substring(1).Replace("\\", "/");
+            if (parentPath == path)
+                return parent;
             else
                 return null;
         }
@@ -218,7 +218,7 @@ namespace OpenXmlFileViewer
         {
             // clean up everything
             treeView.Nodes.Clear();
-            webBrowser1.DocumentText = "";
+            webBrowserCtrl.DocumentText = "";
             lineNumberTextBox.Text = "";
             this.Text = "OpenXml File Viewer";
             label1.Text = "[path]";
@@ -249,7 +249,7 @@ namespace OpenXmlFileViewer
                 {
                     toolStripBtnSave_Click(null, null);
                 }
-                else if (LobjDr == System.Windows.Forms.DialogResult.Cancel)
+                else if (LobjDr == DialogResult.Cancel)
                 {
                     MbolInSelect = true;
                     treeView.SelectedNode = MobjPreviousNode;
@@ -263,7 +263,7 @@ namespace OpenXmlFileViewer
             MobjPreviousNode = PobjEventArgs.Node;
             MobjPreviousNode.BackColor = SystemColors.MenuHighlight;
             lineNumberTextBox.Text = "";
-            webBrowser1.DocumentText = "";
+            webBrowserCtrl.DocumentText = "";
             toolStripBtnSave.Enabled = false;
             toolStripBtnFind.Enabled = false;
             label1.Text = PobjEventArgs.Node.FullPath.Substring(1).Replace("\\", "/");
@@ -287,9 +287,9 @@ namespace OpenXmlFileViewer
                 {
                     tabControl.TabPages.Add(tabPage3);
                     tabPage3.Select();
-                    using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.Read))
+                    using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.Read))
                     {
-                        // get the URI for th part
+                        // get the URI for the part
                         string LstrUri = PobjEventArgs.Node.FullPath.Substring(1).Replace("\\", "/");
                         // grab the part
                         ZipPackagePart LobjPart = (ZipPackagePart)LobjZip.GetPart(new Uri(LstrUri, UriKind.Relative));
@@ -311,24 +311,23 @@ namespace OpenXmlFileViewer
             try
             {
                 // open the part to read the XML
-                using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.Read))
+                using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.Read))
                 {
-                    // get the URI for th part
+                    // get the URI for the part
                     string LstrUri = PobjEventArgs.Node.FullPath.Substring(1).Replace("\\", "/");
                     // grab the part
                     ZipPackagePart LobjPart = (ZipPackagePart)LobjZip.GetPart(new Uri(LstrUri, UriKind.Relative));
                     Stream LobjBaseStream = LobjPart.GetStream(FileMode.Open, FileAccess.Read);
-                    MemoryStream LobjMemoryStream = new MemoryStream();
-                    LobjBaseStream.CopyTo(LobjMemoryStream);
+                    var stream = new MemoryStream();
+                    LobjBaseStream.CopyTo(stream);
                     LobjBaseStream.Close();
                     // load the stream into a string
-                    LobjMemoryStream.Position = 0;
-                    string LstrXml = new StreamReader(LobjMemoryStream, Encoding.UTF8).ReadToEnd();
-                    webBrowser1.DocumentText = LstrXml;
-                    LobjMemoryStream.Position = 0;
+                    stream.Position = 0;
+                    var xmlContent = new StreamReader(stream, Encoding.UTF8).ReadToEnd();
+                    webBrowserCtrl.DocumentText = xmlContent;
+                    stream.Position = 0;
                     // format the string
-                    lineNumberTextBox.Text = FormatXml(LstrXml);
-                    //Highlight();
+                    lineNumberTextBox.Text = FormatXml(xmlContent);
                 }
                 toolStripBtnSave.Enabled = false;
                 toolStripBtnFind.Enabled = true;
@@ -343,7 +342,7 @@ namespace OpenXmlFileViewer
             if (node == null)
                 return;
 
-            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.ReadWrite))
+            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.ReadWrite))
             {
                 // get the URI for the part
                 string LstrUri = node.FullPath.Substring(1).Replace("\\", "/");
@@ -362,7 +361,7 @@ namespace OpenXmlFileViewer
         private void toolStripBtnSave_Click(object sender, EventArgs e)
         {
             // open the package
-            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.ReadWrite))
+            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.ReadWrite))
             {
                 string LstrUri = label1.Text;
                 ZipPackagePart LobjPart = (ZipPackagePart)LobjZip.GetPart(new Uri(LstrUri, UriKind.Relative));
@@ -444,7 +443,7 @@ namespace OpenXmlFileViewer
                 return;
 
             // open the package
-            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(MstrPath, FileMode.Open, FileAccess.Read))
+            using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.Read))
             {
                 if (new FileInfo(LobjSfd.FileName).Exists)
                     new FileInfo(LobjSfd.FileName).Delete();

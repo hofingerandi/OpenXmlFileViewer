@@ -32,7 +32,7 @@ namespace OpenXmlFileViewer
                 RegisterKey("PowerPoint.Template.12");
                 RegisterKey("PowerPoint.TemplateMacroEnabled.12");
             }
-            catch (Exception LobjEx)
+            catch (Exception)
             {
                 //MessageBox.Show("Unable to register");
             }

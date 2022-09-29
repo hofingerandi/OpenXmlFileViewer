@@ -67,7 +67,7 @@ namespace OpenXmlFileViewer
         /// <summary>
         /// TEXT PROPERTY
         /// </summary>
-        public string Text
+        public new string Text
         {
             get
             {

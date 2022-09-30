@@ -342,15 +342,18 @@ namespace OpenXmlFileViewer
             if (node == null)
                 return;
 
+            bool deleted = false;
             using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.ReadWrite))
             {
                 // get the URI for the part
                 string LstrUri = node.FullPath.Substring(1).Replace("\\", "/");
                 // grab the part
                 var nodeToDelete = new Uri(LstrUri, UriKind.Relative);
-                LobjZip.DeletePartAndRelationships(nodeToDelete);
+                deleted = LobjZip.TryDeletePartAndRelationships(nodeToDelete);
             }
-            treeView.Nodes.Remove(node);
+
+            if (deleted)
+                treeView.Nodes.Remove(node);
         }
 
         /// <summary>

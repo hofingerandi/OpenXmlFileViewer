@@ -6,9 +6,11 @@ namespace OpenXmlFileViewer.Extensions
 {
     public static class ZipPackageExtensions
     {
-        public static void DeletePartAndRelationships(this ZipPackage package, Uri nodeToDelete)
+        public static bool TryDeletePartAndRelationships(this ZipPackage package, Uri nodeToDelete)
         {
-            var part = package.GetPart(nodeToDelete);
+            if (!package.PartExists(nodeToDelete))
+                return false;
+
             package
                 .GetRelationships()
                 .Where(r => r.TargetUri == nodeToDelete)
@@ -16,6 +18,7 @@ namespace OpenXmlFileViewer.Extensions
                 .ForEach(r => package.DeleteRelationship(r.Id));
 
             package.DeletePart(nodeToDelete);
+            return true;
         }
     }
 }

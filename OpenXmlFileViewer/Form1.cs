@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.IO.Packaging;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
@@ -278,12 +279,7 @@ namespace OpenXmlFileViewer
                 removeTabPages();
 
                 // if the type is an image, then we will show it
-                if (PobjEventArgs.Node.FullPath.ToLower().EndsWith("jpeg") ||
-                   PobjEventArgs.Node.FullPath.ToLower().EndsWith("jpg") ||
-                   PobjEventArgs.Node.FullPath.ToLower().EndsWith("png") ||
-                   PobjEventArgs.Node.FullPath.ToLower().EndsWith("bmp") ||
-                   PobjEventArgs.Node.FullPath.ToLower().EndsWith("wmf") ||
-                   PobjEventArgs.Node.FullPath.ToLower().EndsWith("emf"))
+                if (IsImageType(PobjEventArgs.Node.FullPath))
                 {
                     tabControl.TabPages.Add(tabPage3);
                     tabPage3.Select();
@@ -324,16 +320,32 @@ namespace OpenXmlFileViewer
                     // load the stream into a string
                     stream.Position = 0;
                     var xmlContent = new StreamReader(stream, Encoding.UTF8).ReadToEnd();
-                    webBrowserCtrl.DocumentText = xmlContent;
+                    webBrowserCtrl.DocumentText = FormatXml(xmlContent);
                     stream.Position = 0;
                     // format the string
-                    lineNumberTextBox.Text = FormatXml(xmlContent);
+                    lineNumberTextBox.Text = xmlContent;
                 }
                 toolStripBtnSave.Enabled = false;
                 toolStripBtnFind.Enabled = true;
                 this.Refresh();
             }
             catch { }
+        }
+
+        private static bool IsImageType(string type)
+        {
+            switch (type.Split('.').Last().ToLower())
+            {
+                case "jpeg":
+                case "jpg":
+                case "png":
+                case "bmp":
+                case "wmf":
+                case "emf":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void DeleteSelectedNode()

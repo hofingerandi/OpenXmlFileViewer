@@ -39,7 +39,7 @@ namespace OpenXmlFileViewer
                 openFile();
             }
             treeView.KeyDown += TreeView_KeyDown;
-
+            toolStripBtnDelete.Image = SystemIcons.Error.ToBitmap();
             removeTabPages();
             webBrowserCtrl.Navigate("about:blank");
         }
@@ -238,6 +238,8 @@ namespace OpenXmlFileViewer
         {
             if (MbolInSelect)
                 return;
+
+            toolStripBtnDelete.Enabled = true;
 
             // is the document dirty? And are we on the Edit tab
             if (toolStripBtnSave.Enabled && tabControl.SelectedTab == tabPage2)
@@ -475,6 +477,11 @@ namespace OpenXmlFileViewer
                 LobjSw.Close();
                 LobjSr.Close();
             }
+        }
+
+        private void toolStripBtnDelete_Click(object sender, EventArgs e)
+        {
+            DeleteSelectedNode();
         }
     }
 }

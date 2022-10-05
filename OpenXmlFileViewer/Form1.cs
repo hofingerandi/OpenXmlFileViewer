@@ -39,8 +39,7 @@ namespace OpenXmlFileViewer
             this.Text = "OpenXml File Viewer";
             if (args.Length > 0)
             {
-                PackagePath = args[0];
-                openFile(PackagePath);
+                openFile(args[0]);
             }
             treeView.KeyDown += TreeView_KeyDown;
             toolStripBtnDelete.Image = SystemIcons.Error.ToBitmap();
@@ -91,8 +90,7 @@ namespace OpenXmlFileViewer
                 dialog.Filter = "All|*.doc*;*.xls*;*.ppt*;*.mip;*.simp|Word Documents|*.doc*|Excel Workbooks|*.xls*|PowerPoint Presentations|*.ppt*";
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    PackagePath = dialog.FileName;
-                    openFile(PackagePath);
+                    openFile(dialog.FileName);
                 }
             }
         }
@@ -105,6 +103,7 @@ namespace OpenXmlFileViewer
             if (!File.Exists(packagePath))
                 return;
 
+            PackagePath = packagePath;
             CloseOpenedFile();
 
             toolStripBtnOpen.Enabled = false;

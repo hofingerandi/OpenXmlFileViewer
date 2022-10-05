@@ -356,6 +356,20 @@ namespace OpenXmlFileViewer
             if (node == null)
                 return;
 
+            DeleteRecursive(node);
+        }
+
+        private bool DeleteRecursive(TreeNode node)
+        {
+            if (node == null)
+                return false;
+
+            while (node.Nodes.Count > 0)
+            {
+                if (!DeleteRecursive(node.Nodes[0]))
+                    return false;
+            }
+
             bool deleted = false;
             using (ZipPackage LobjZip = (ZipPackage)ZipPackage.Open(PackagePath, FileMode.Open, FileAccess.ReadWrite))
             {
@@ -366,8 +380,12 @@ namespace OpenXmlFileViewer
                 deleted = LobjZip.TryDeletePartAndRelationships(nodeToDelete);
             }
 
-            if (deleted)
+            if (deleted || node.Nodes.Count == 0)
+            {
                 treeView.Nodes.Remove(node);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

@@ -28,6 +28,10 @@ namespace OpenXmlFileViewer
         public Form1(string[] args)
         {
             InitializeComponent();
+            AllowDrop = true;
+            DragEnter += Form1_DragEnter;
+            DragDrop += Form1_DragDrop;
+
             lineNumberTextBox.XmlTextChanged += (o, e) =>
             {
                 toolStripBtnSave.Enabled = true;
@@ -36,12 +40,25 @@ namespace OpenXmlFileViewer
             if (args.Length > 0)
             {
                 PackagePath = args[0];
-                openFile();
+                openFile(PackagePath);
             }
             treeView.KeyDown += TreeView_KeyDown;
             toolStripBtnDelete.Image = SystemIcons.Error.ToBitmap();
             removeTabPages();
             webBrowserCtrl.Navigate("about:blank");
+        }
+
+        private void Form1_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files?.Length > 0)
+                openFile(files[0]);
+        }
+
+        private void Form1_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                e.Effect = DragDropEffects.Copy;
         }
 
         private void TreeView_KeyDown(object sender, KeyEventArgs e)
@@ -75,7 +92,7 @@ namespace OpenXmlFileViewer
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     PackagePath = dialog.FileName;
-                    openFile();
+                    openFile(PackagePath);
                 }
             }
         }
@@ -83,13 +100,18 @@ namespace OpenXmlFileViewer
         /// <summary>
         /// CORE - here is where we open the file denoted by the MstrPath value
         /// </summary>
-        private void openFile()
+        private void openFile(string packagePath)
         {
+            if (!File.Exists(packagePath))
+                return;
+
+            CloseOpenedFile();
+
             toolStripBtnOpen.Enabled = false;
             toolStripBtnClose.Enabled = true;
-            this.Text = "[" + new FileInfo(PackagePath).Name + "]";
+            this.Text = "[" + new FileInfo(packagePath).Name + "]";
             // open the package
-            using (var package = Package.Open(PackagePath, FileMode.Open, FileAccess.Read))
+            using (var package = Package.Open(packagePath, FileMode.Open, FileAccess.Read))
             {
                 // setup the root node
                 var rootNode = treeView.Nodes.Add("/", "/");
@@ -216,6 +238,11 @@ namespace OpenXmlFileViewer
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void toolStripBtnClose_Click(object sender, EventArgs e)
+        {
+            CloseOpenedFile();
+        }
+
+        private void CloseOpenedFile()
         {
             // clean up everything
             treeView.Nodes.Clear();

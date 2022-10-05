@@ -300,8 +300,7 @@ namespace OpenXmlFileViewer
 
             // determine the PART type - if it is not VML or XML, then do not try to
             // read it.
-            if (!PobjEventArgs.Node.FullPath.ToLower().EndsWith(".xml") && !PobjEventArgs.Node.FullPath.ToLower().EndsWith(".rels") &&
-                !PobjEventArgs.Node.FullPath.ToLower().EndsWith(".vml"))
+            if (!IsWebBrowserPresenable(PobjEventArgs.Node.FullPath))
             {
                 // hide the text panes - since this part cannot be shown
                 removeTabPages();
@@ -358,6 +357,25 @@ namespace OpenXmlFileViewer
                 this.Refresh();
             }
             catch { }
+        }
+
+        /// <summary>
+        /// File types, a WebBrowserControl can display
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private bool IsWebBrowserPresenable(string type)
+        {
+            switch (type.Split('.').Last().ToLower())
+            {
+                case "xml":
+                case "rels":
+                case "vml":
+                case "svg":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static bool IsImageType(string type)
